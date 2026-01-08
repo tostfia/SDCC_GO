@@ -1,1 +1,0 @@
-/*espone un metodo RPC, si registra all'avvio, si deregistra alla chiusura*/

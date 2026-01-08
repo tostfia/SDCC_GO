@@ -5,10 +5,21 @@ import(
 	"log"
 	"net/rpc"
 	"SDCC_GO/registry"
+	"os"
+	
+	
 )
 
 
+
 func main(){
+	//Scelta dell'algoritmo da terminale 
+	algorithm:="random"//default
+	if len(os.Args)>1{
+		algorithm=os.Args[1]
+	}
+	fmt.Println("Algoritmo scelto:",algorithm)
+
 	//connessione al registry
 	regClient,err:=rpc.Dial("tcp","localhost:9000")
 	if err!=nil{
@@ -17,16 +28,26 @@ func main(){
 	//Chiude la connessione quando  la funzione main termina
 	defer regClient.Close()
 	
-	//Lookup dei servizi
-	var services []registry.ServiceInfo
-	err=regClient.Call("Registry.Lookup",struct{}{},&services)
-	if err!=nil{
-		log.Fatalf("Errore nella lookup:%v",err)
-	}
-	fmt.Println("Servizi disponibili:", services)
+	//Caching, in caso di miss facciamo lookup
+	services:=getServicesWithCache()
 
-	//Scelta un servizio con LB
-	chosen:= RandomLB(services)
+	//Scelgo un servizio con LB
+	var chosen registry.ServiceInfo
+
+	switch algorithm {
+	case "random":
+		chosen = RandomLB(services)
+
+	case "rr":
+		chosen = RoundRobinLB(services)
+
+	case "weighted":
+		chosen = WeightedLB(services)
+
+	default:
+		fmt.Println("Algoritmo non riconosciuto, uso random")
+		chosen = RandomLB(services)
+	}
 	fmt.Println("Servizio scelto:", chosen.Name)
 
 	//Connessione al servizio scelto
