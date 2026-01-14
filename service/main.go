@@ -34,8 +34,7 @@ func main() {
         log.Fatalf("Peso non valido: %v", err)
     }
 
-
-    srv := &impl.Service{Name: name, Host: "localhost", Port: port, Weight: weight,}
+    srv := &impl.Service{Name:name,Host:os.Getenv("SERVICE_HOST"), Port:port, Weight: weight, }
 
     // Registra il servizio RPC
     err = rpc.Register(srv)

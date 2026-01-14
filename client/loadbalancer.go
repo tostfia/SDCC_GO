@@ -8,8 +8,11 @@ import (
 var rrIndex=0
 
 //Caso stateless Random
-func RandomLB(services []registry.ServiceInfo) registry.ServiceInfo{
-	return services[rand.Intn(len(services))]
+func RandomLB(services []registry.ServiceInfo) registry.ServiceInfo {
+    if len(services) == 0 {
+        return registry.ServiceInfo{} // oppure panic controllato
+    }
+    return services[rand.Intn(len(services))]
 }
 
 //Caso stateless RoundRobin

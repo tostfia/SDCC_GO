@@ -8,6 +8,6 @@ RUN go mod download
 COPY . .
 
 WORKDIR /app/client
-RUN go build -o client main.go
+RUN go build -o client .
 
 CMD ["./client", "weighted"]

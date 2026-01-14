@@ -14,6 +14,9 @@ services:
       context: .
       dockerfile: service/Dockerfile
     container_name: service1
+    environment:
+    - SERVICE_HOST=service1
+
     command: ["./service", "S1", "8001", "3"]
     depends_on:
       - registry
@@ -23,17 +26,43 @@ services:
       context: .
       dockerfile: service/Dockerfile
     container_name: service2
+    environment:
+    - SERVICE_HOST=service2
+
     command: ["./service", "S2", "8002", "1"]
     depends_on:
       - registry
 
-  client:
+
+  client1:
     build:
       context: .
       dockerfile: client/Dockerfile
-    container_name: client
+    container_name: client1
     depends_on:
       - registry
       - service1
       - service2
     command: ["./client", "weighted"]
+
+  client2:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    container_name: client2
+    depends_on:
+      - registry
+      - service1
+      - service2
+    command: ["./client", "random"]
+
+  client3:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    container_name: client3
+    depends_on:
+      - registry
+      - service1
+      - service2
+    command: ["./client", "rr"]
