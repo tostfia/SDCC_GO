@@ -1,4 +1,4 @@
-version: "3.9"
+
 
 services:
   registry:
@@ -12,7 +12,7 @@ services:
   service1:
     build:
       context: .
-    dockerfile: service/Dockerfile
+      dockerfile: service/Dockerfile
     container_name: service1
     command: ["./service", "S1", "8001", "3"]
     depends_on:
