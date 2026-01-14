@@ -10,7 +10,7 @@ import(
 
 //Metodo RPC: registra il servizio nel registry
 func (s *Service) Register(_ struct{}, ok *bool) error{
-	regClient, err :=rpc.Dial("tcp", "localhost:9000")
+	regClient, err :=rpc.Dial("tcp", "registry:9000")
 	if err!=nil{
 		return fmt.Errorf("errore connessione registry:%v",err)
 	}
@@ -33,7 +33,7 @@ func (s *Service) Register(_ struct{}, ok *bool) error{
 
 // Metodo RPC: deregistra il servizio dal registry
 func (s *Service) Deregister(_ struct{}, ok *bool) error {
-    regClient, err := rpc.Dial("tcp", "localhost:9000")
+    regClient, err := rpc.Dial("tcp", "registry:9000")
     if err != nil {
         return fmt.Errorf("errore connessione registry: %v", err)
     }

@@ -1,70 +1,73 @@
 package main
 
-import(
+import (
 	"fmt"
 	"log"
 	"net/rpc"
-	"SDCC_GO/registry"
 	"os"
-	
-	
+	"time"
+
+	"SDCC_GO/registry"
+	"SDCC_GO/service/impl"
 )
 
-
-
-func main(){
-	//Scelta dell'algoritmo da terminale 
-	algorithm:="random"//default
-	if len(os.Args)>1{
-		algorithm=os.Args[1]
+func main() {
+	algorithm := "random"
+	if len(os.Args) > 1 {
+		algorithm = os.Args[1]
 	}
-	fmt.Println("Algoritmo scelto:",algorithm)
 
-	//connessione al registry
-	regClient,err:=rpc.Dial("tcp","localhost:9000")
-	if err!=nil{
-		log.Fatalf("Errore nella connessione al servizio:%v",err)
+	services := getServicesWithCache()
+	if len(services) == 0 {
+		log.Fatalf("Nessun servizio disponibile")
 	}
-	//Chiude la connessione quando  la funzione main termina
-	defer regClient.Close()
-	
-	//Caching, in caso di miss facciamo lookup
-	services:=getServicesWithCache()
 
-	//Scelgo un servizio con LB
 	var chosen registry.ServiceInfo
-
 	switch algorithm {
 	case "random":
 		chosen = RandomLB(services)
-
 	case "rr":
 		chosen = RoundRobinLB(services)
-
 	case "weighted":
 		chosen = WeightedLB(services)
-
 	default:
-		fmt.Println("Algoritmo non riconosciuto, uso random")
 		chosen = RandomLB(services)
 	}
-	fmt.Println("Servizio scelto:", chosen.Name)
 
-	//Connessione al servizio scelto
 	addr := fmt.Sprintf("%s:%d", chosen.Host, chosen.Port)
 	srvClient, err := rpc.Dial("tcp", addr)
 	if err != nil {
-		log.Fatalf("Errore nella connessione al servizio scelto: %v", err)
+		log.Printf("Errore connessione → fallback")
+		invalidateCache()
+		services = getServicesWithCache()
+		chosen = RandomLB(services)
+		addr = fmt.Sprintf("%s:%d", chosen.Host, chosen.Port)
+		srvClient, err = rpc.Dial("tcp", addr)
+		if err != nil {
+			log.Fatalf("Errore anche nel fallback: %v", err)
+		}
 	}
 	defer srvClient.Close()
 
-	var reply string
-	err = srvClient.Call("Service.DoWork", "ciao dal client", &reply)
-	if err != nil {
-		log.Fatalf("Errore nella chiamata RPC: %v", err)
+	for i := 1; i <= 5; i++ {
+		req := impl.WorkRequest{
+			ClientID: "C1",
+			Payload:  fmt.Sprintf("richiesta #%d", i),
+		}
+
+		var reply string
+		err = srvClient.Call("Service.DoWork", req, &reply)
+		if err != nil {
+			log.Printf("Errore RPC → cambio servizio")
+			invalidateCache()
+			services = getServicesWithCache()
+			chosen = RandomLB(services)
+			addr = fmt.Sprintf("%s:%d", chosen.Host, chosen.Port)
+			srvClient, _ = rpc.Dial("tcp", addr)
+			continue
+		}
+
+		fmt.Println("Risposta:", reply)
+		time.Sleep(1 * time.Second)
 	}
-
-	fmt.Println("Risposta:", reply)
-
-
 }

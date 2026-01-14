@@ -11,14 +11,11 @@ import (
 func StartRegistry(){
 	reg:=NewRegistry()
 
-	//Registra l'oggetto registry come servizio RPC
-	//I metodi esportati li invoca via RPC
 	err:=rpc.Register(reg)
 	if err!=nil{
 		log.Fatalf("Errore nella registrazione RPC:%v",err)
 	}
 
-	//Listener TCP sulla porta 9000 (tutte le interfacce)
 	listener,err := net.Listen("tcp",":9000")
 	if err!=nil{
 		log.Fatalf("Errore nel listen sulla porta 9000:%v",err)

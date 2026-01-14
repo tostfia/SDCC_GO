@@ -38,7 +38,11 @@ func main() {
     srv := &impl.Service{Name: name, Host: "localhost", Port: port, Weight: weight,}
 
     // Registra il servizio RPC
-    rpc.Register(srv)
+    err = rpc.Register(srv)
+	if err != nil {
+		log.Fatalf("Errore registrazione RPC servizio: %v", err)
+	}
+
 
     // Avvia listener
     address := fmt.Sprintf(":%d", port)

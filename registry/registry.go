@@ -1,70 +1,91 @@
 package registry
 
 import (
-	"sync"					//pacchetto per la mutua esclusione sui dati condivisi
+	"fmt"
+	"log"
+	"net/rpc"
+	"sync"
+	"time"
 )
 
-
-//Struttura ServiceInfo descrive un servizio registrato
-type ServiceInfo struct{
-	Name string //Nome logico del servizio (es. S1 S2 ...)
-	Host string //Host su cui gira il servizio 
-	Port int  // Porta su cui il servizio ascolta
-	Weight int  //peso per il load balancing stateful
+type ServiceInfo struct {
+	Name   string
+	Host   string
+	Port   int
+	Weight int
 }
 
-//Registry mantiene la lista dei servizi registrati
-type Registry struct{
-	mu sync.Mutex 			//Mutex per proteggere l'accesso concorrente alla mappa
-	services map[string] ServiceInfo   //Mappa: nome servizio -> informazioni sul servizio
+type Registry struct {
+	mu       sync.Mutex
+	services map[string]ServiceInfo
 }
 
-//NewRegistry crea un nuovo registry vuoto
-func NewRegistry() *Registry{
-	return &Registry{ 
-		services: make(map[string]ServiceInfo), //inizializza la mappa nuova
+func NewRegistry() *Registry {
+	r := &Registry{
+		services: make(map[string]ServiceInfo),
 	}
+	go r.startHeartbeat()
+	return r
 }
 
-
-//metodi esportati per registrazione, deregistrazione e lookup
-
-//Register aggiunge o aggiorna un servizio nel registry (argomento,*risposta)
-func (r *Registry) Register(info ServiceInfo,ok *bool) error{
-	r.mu.Lock()  //Blocca il mutex per evitare accessi concorrenti
-	defer r.mu.Unlock() //Sblocco alla fine delle funzione
-
-
-	r.services[info.Name]=info //Inserisco e aggiorno 
-	*ok=true //se va bene 
-	return nil
-}
-
-
-//Deregister rimuove un servizio alla mappa
-func (r *Registry) Deregistry(info ServiceInfo,ok *bool) error{
+func (r *Registry) Register(info ServiceInfo, ok *bool) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	delete(r.services,info.Name)//Rimuovo
-	*ok=true
+	r.services[info.Name] = info
+	*ok = true
 	return nil
 }
 
-//Lookup restituisce la lista
-//L'argomento è una struct vuota perchè non serve input
-func (r *Registry) Lookup(_ struct{}, list *[]ServiceInfo) error{
-	r.mu.Lock() 
+func (r *Registry) Deregister(info ServiceInfo, ok *bool) error {
+	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	//Pulisce la lista prima di riempirla evitare confusione
-	*list=(*list)[:0]
+	delete(r.services, info.Name)
+	*ok = true
+	return nil
+}
 
-	//Aggiunge tutti i servizi nella slice di input
-	for _,s:= range r.services{
-		*list=append(*list,s)
+func (r *Registry) Lookup(_ struct{}, list *[]ServiceInfo) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	*list = (*list)[:0]
+	for _, s := range r.services {
+		*list = append(*list, s)
 	}
 	return nil
+}
+
+func (r *Registry) startHeartbeat() {
+	ticker := time.NewTicker(5 * time.Second)
+	for range ticker.C {
+		r.checkServices()
+	}
+}
+
+func (r *Registry) checkServices() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for name, info := range r.services {
+		addr := fmt.Sprintf("%s:%d", info.Host, info.Port)
+		client, err := rpc.Dial("tcp", addr)
+		if err != nil {
+			log.Printf("Servizio %s non raggiungibile → rimosso", name)
+			delete(r.services, name)
+			continue
+		}
+
+		var ok bool
+		err = client.Call("Service.HealthCheck", struct{}{}, &ok)
+		client.Close()
+
+		if err != nil || !ok {
+			log.Printf("Servizio %s non risponde all'health-check → rimosso", name)
+			delete(r.services, name)
+		}
+	}
 }
 
 

@@ -26,6 +26,12 @@ func computeTTL(serviceCount int) time.Duration{
 	}
 }
 
+func invalidateCache() {
+	cachedServices = nil
+	cacheTimestamp = time.Time{}
+}
+
+
 //Funzione che restituisce i servizi usando la cache
 func getServicesWithCache() []registry.ServiceInfo{
 	//Se la cache è ancora valida, si usa
@@ -37,7 +43,7 @@ func getServicesWithCache() []registry.ServiceInfo{
 		}
 	}
 	//Altrimenti faccio lookup dal registry
-	regClient,err:=rpc.Dial("tcp","localhost:9000")
+	regClient,err:=rpc.Dial("tcp","registry:9000")
 	if err!=nil{
 		log.Println("Registry non raggiungibile, uso cache se disponibile")
         return cachedServices

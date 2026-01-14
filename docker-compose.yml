@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  registry:
+    build:
+      context: .
+      dockerfile: registry/Dockerfile
+    container_name: registry
+    ports:
+      - "9000:9000"
+
+  service1:
+    build:
+      context: .
+    dockerfile: service/Dockerfile
+    container_name: service1
+    command: ["./service", "S1", "8001", "3"]
+    depends_on:
+      - registry
+
+  service2:
+    build:
+      context: .
+      dockerfile: service/Dockerfile
+    container_name: service2
+    command: ["./service", "S2", "8002", "1"]
+    depends_on:
+      - registry
+
+  client:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    container_name: client
+    depends_on:
+      - registry
+      - service1
+      - service2
+    command: ["./client", "weighted"]
