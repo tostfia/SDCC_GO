@@ -26,14 +26,14 @@ func main() {
     }
 
     // Porta come string convertito a int
-    portStr := os.Args[2]
+    portStr := os.Args[1]
     port, err := strconv.Atoi(portStr)
     if err != nil {
         log.Fatalf("Porta non valida: %v", err)
     }
 
     // Peso come string convertito a int
-    weightStr := os.Args[3]
+    weightStr := os.Args[2]
     weight, err := strconv.Atoi(weightStr)
     if err != nil {
         log.Fatalf("Peso non valido: %v", err)

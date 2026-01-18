@@ -7,7 +7,11 @@ RUN go mod download
 
 COPY . .
 
+# Crea la directory per lo stato condiviso
+RUN mkdir -p /app/state
+
 WORKDIR /app/service
 RUN go build -o service main.go
 
-CMD ["./service", "S1", "8001", "3"]
+# Il nome del servizio viene da SERVICE_NAME nel docker-compose
+CMD ["./service", "8001", "3"]
