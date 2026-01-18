@@ -45,6 +45,7 @@ I servizi possono mantenere stato interno.
 
 ## **Struttura del progetto**
 
+```text
 SDCC_GO/
 │
 ├── client/                     # Client con load balancing lato client
@@ -73,7 +74,7 @@ SDCC_GO/
 ├── go.mod                      # Modulo Go e dipendenze
 ├── run.sh                      # Script di avvio completo
 └── README.md                   # Documentazione del progetto
-
+```
 ---
 
 ## **Service Registry**
