@@ -16,10 +16,9 @@ Questo progetto implementa un sistema distribuito che integra :
 
 
 
----
 
-## **Architettura del Sistema**
 
+<<<<<<< HEAD
 Il sistema è composto dai seguenti componenti:
 
 - *Service Registry*  
@@ -197,3 +196,5 @@ Lo script esegue automaticamente:
 
 ```bash
 ./run.sh
+=======
+>>>>>>> fbd00d935359c7c4265e0ed839cfcb785f37636a
