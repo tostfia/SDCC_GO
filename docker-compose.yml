@@ -15,11 +15,13 @@ services:
       dockerfile: service/Dockerfile
     container_name: service1
     environment:
-    - SERVICE_HOST=service1
-
-    command: ["./service", "S1", "8001", "3"]
+      - SERVICE_NAME=S1
+      - SERVICE_HOST=service1
+    command: ["./service", "8001", "3"]
     depends_on:
       - registry
+    volumes:
+      - shared-state:/app/state
 
   service2:
     build:
@@ -27,12 +29,13 @@ services:
       dockerfile: service/Dockerfile
     container_name: service2
     environment:
-    - SERVICE_HOST=service2
-
-    command: ["./service", "S2", "8002", "1"]
+      - SERVICE_NAME=S1
+      - SERVICE_HOST=service2
+    command: ["./service", "8002", "1"]
     depends_on:
       - registry
-
+    volumes:
+      - shared-state:/app/state
 
   client1:
     build:
@@ -66,3 +69,6 @@ services:
       - service1
       - service2
     command: ["./client", "rr"]
+
+volumes:
+  shared-state:

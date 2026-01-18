@@ -14,12 +14,17 @@ import (
 func main() {
 
     //Parametri da terminale
-    if len(os.Args) <4 {
-        log.Fatalf("Uso:go run ./service <Nome> <Porta> <Peso>")
+    if len(os.Args) <3 {
+        log.Fatalf("Uso:go run ./service  <Porta> <Peso>")
     }
 
 
-    name:= os.Args[1]
+    // Nome del servizio preso dalla variabile d'ambiente
+    name := os.Getenv("SERVICE_NAME")
+    if name == "" {
+        log.Fatalf("Variabile SERVICE_NAME non impostata")
+    }
+
     // Porta come string convertito a int
     portStr := os.Args[2]
     port, err := strconv.Atoi(portStr)

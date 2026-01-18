@@ -1,6 +1,11 @@
 package impl
 
-import "fmt"
+import (
+    "fmt"
+    "os"
+    "strconv"
+)
+
 
 // Struttura della richiesta RPC
 type WorkRequest struct {
@@ -18,24 +23,55 @@ type Service struct {
 	ByClient     map[string]int
 }
 
+
+
+//Stateless
+func (s *Service) Echo(payload string, reply *string) error {
+    *reply = "Echo: " + payload
+    return nil
+}
+
+
+//Statefull
 func (s *Service) DoWork(req WorkRequest, output *string) error {
-	s.RequestCount++
+    // Percorso del file condiviso tra repliche
+    path := "/app/state/counter.txt"
 
-	if s.ByClient == nil {
-		s.ByClient = make(map[string]int)
-	}
-	s.ByClient[req.ClientID]++
+    // Se il file non esiste, crealo con valore 0
+    if _, err := os.Stat(path); os.IsNotExist(err) {
+        os.WriteFile(path, []byte("0"), 0644)
+    }
 
-	*output = fmt.Sprintf(
-		"Servizio %s → richiesta #%d (client %s: %d richieste) → payload='%s'",
-		s.Name,
-		s.RequestCount,
-		req.ClientID,
-		s.ByClient[req.ClientID],
-		req.Payload,
-	)
+    // Leggi il contatore globale
+    data, err := os.ReadFile(path)
+    if err != nil {
+        return fmt.Errorf("errore lettura stato: %v", err)
+    }
 
-	return nil
+    count, err := strconv.Atoi(string(data))
+    if err != nil {
+        count = 0
+    }
+
+    // Aggiorna il contatore
+    count++
+
+    // Scrivi il nuovo valore
+    err = os.WriteFile(path, []byte(strconv.Itoa(count)), 0644)
+    if err != nil {
+        return fmt.Errorf("errore scrittura stato: %v", err)
+    }
+
+    // Risposta
+    *output = fmt.Sprintf(
+        "Servizio %s → richiesta #%d (client %s) → payload='%s'",
+        s.Name,
+        count,
+        req.ClientID,
+        req.Payload,
+    )
+
+    return nil
 }
 
 // Usato dal registry per verificare se il servizio è vivo

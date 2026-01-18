@@ -49,6 +49,16 @@ func main() {
 	}
 	defer srvClient.Close()
 
+	//Stateless
+	var echoReply string
+	err = srvClient.Call("Service.Echo", "ciao", &echoReply)
+	if err != nil {
+		log.Printf("Errore RPC Echo → %v", err)
+	} else {
+		fmt.Println("Echo:", echoReply)
+	}
+
+	//Statefull
 	for i := 1; i <= 5; i++ {
 		req := impl.WorkRequest{
 			ClientID: "C1",
@@ -56,6 +66,7 @@ func main() {
 		}
 
 		var reply string
+
 		err = srvClient.Call("Service.DoWork", req, &reply)
 		if err != nil {
 			log.Printf("Errore RPC → cambio servizio")
@@ -66,6 +77,8 @@ func main() {
 			srvClient, _ = rpc.Dial("tcp", addr)
 			continue
 		}
+
+
 
 		fmt.Println("Risposta:", reply)
 		time.Sleep(1 * time.Second)
