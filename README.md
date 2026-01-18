@@ -13,12 +13,10 @@ Questo progetto implementa un sistema distribuito che integra :
 - *Orchestrazione tramite Docker Compose*
 - *Supporto multi‑client concorrente*
 
+---
 
+## **Architettura del Sistema**
 
-
-
-
-<<<<<<< HEAD
 Il sistema è composto dai seguenti componenti:
 
 - *Service Registry*  
@@ -49,23 +47,34 @@ I servizi possono mantenere stato interno.
 
 SDCC_GO/
 │
-├── client/          # Client
-│   ├── cache.go
-│   └── Dockerfile
+├── client/                     # Client con load balancing lato client
+│   ├── cache.go                # Gestione della cache dinamica
+│   ├── loadbalancer.go         # Algoritmi di bilanciamento (RR, Random, Weighted)
+│   ├── main.go                 # Entry point del client
+│   └── Dockerfile              # Containerizzazione del client
+│
+├── cmd/
+│   └── registry/
+│       └── main.go             # Entry point del service registry
+│
+├── registry/                   # Service Registry RPC
+│   ├── registry.go             # Logica di registrazione e lookup
+│   ├── server.go               # Server RPC
+│   └── Dockerfile              # Containerizzazione del registry
+│
+├── service/                    # Servizio RPC replicabile
+│   ├── main.go                 # Entry point del servizio
+│   ├── impl/
+│   │   ├── service.go          # Metodo DoWork + Echo
+│   │   └── lifecycle.go        # Registrazione/Deregistrazione automatica
+│   └── Dockerfile              # Containerizzazione del servizio
+│
+├── docker-compose.yml          # Orchestrazione dei container
+├── go.mod                      # Modulo Go e dipendenze
+├── run.sh                      # Script di avvio completo
+└── README.md                   # Documentazione del progetto
 
-│
-├── service/           # Servizio
-│   ├── main.go
-│   └── impl/
-│       └── service.go
-│
-├── client/            # Service Registry
-│   ├── main.go
-│   └── ...
-│
-├── docker-compose.yml # Orchestrazione del sistema
-├── run.sh             # Script di avvio
-└── README.md
+---
 
 ## **Service Registry**
 
@@ -196,5 +205,3 @@ Lo script esegue automaticamente:
 
 ```bash
 ./run.sh
-=======
->>>>>>> fbd00d935359c7c4265e0ed839cfcb785f37636a
