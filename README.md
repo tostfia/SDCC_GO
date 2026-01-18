@@ -3,9 +3,18 @@
 **Corso:** Sistemi Distribuiti e Cloud Computing  
 **Anno Accademico:** 2025/2026  
 
-Questo progetto implementa un sistema distribuito che integra  
-service discovery, load balancing lato client, caching dinamica  
-e orchestrazione tramite Docker Compose.
+Questo progetto implementa un sistema distribuito che integra :
+- *Service Discovery tramite Service Registry*
+- *Load Balancing lato client (Random, Round Robin, Weighted)*
+- *Caching dinamica con TTL adattivo*
+- *Servizi stateless e stateful*
+- *Stato condiviso tra repliche tramite volume Docker*
+- *Registrazione e deregistrazione automatica*
+- *Orchestrazione tramite Docker Compose*
+- *Supporto multi‑client concorrente*
+
+
+
 
 ---
 
@@ -15,11 +24,12 @@ Il sistema è composto dai seguenti componenti:
 
 - *Service Registry*  
 - *Servizi RPC (`service1`, `service2`, …)*  
-- *Client con load balancing lato client*  
+- *Client con algoritmi di load balancing*  
 - *Caching dinamica dei servizi*  
 - *Registrazione e deregistrazione automatica*  
-- *Orchestrazione tramite Docker Compose*  
-
+- *Orchestrazione tramite Docker Compose* 
+- *Volume condiviso per lo stato del servizio stateful*
+ 
 I client scoprono dinamicamente i servizi disponibili tramite  
 il registry, selezionano un servizio utilizzando diversi algoritmi  
 di load balancing e inviano richieste RPC.  
@@ -27,12 +37,43 @@ I servizi possono mantenere stato interno.
 
 ---
 
+## **Requisiti di Sistema**
+
+- *Docker Desktop con integrazione WSL2 attiva*
+- *Docker Compose v2*
+- *Go 1.22+ (solo per compilazione manuale)*
+- *Sistema operativo: Linux, macOS o Windows 10/11 con WSL2*
+
+---
+
+## **Struttura del progetto**
+
+SDCC_GO/
+│
+├── client/          # Client
+│   ├── cache.go
+│   └── Dockerfile
+
+│
+├── service/           # Servizio
+│   ├── main.go
+│   └── impl/
+│       └── service.go
+│
+├── client/            # Service Registry
+│   ├── main.go
+│   └── ...
+│
+├── docker-compose.yml # Orchestrazione del sistema
+├── run.sh             # Script di avvio
+└── README.md
+
 ## **Service Registry**
 
 Il service registry mantiene la lista dei servizi attivi e  
 supporta le seguenti operazioni:
 
-- *Register: i servizi si registrano all’avvio fornendo nome, host, porta e peso*  
+- *Register: i servizi si registrano all’avvio fornendo nome, porta e peso*  
 - *Deregister: i servizi si deregistrano automaticamente alla chiusura*  
 - *Lookup: i client richiedono la lista aggiornata dei servizi disponibili*  
 
@@ -53,6 +94,34 @@ dei client e restituisce una risposta.
 - *Deregistrazione automatica alla terminazione*  
 - *Possibilità di mantenere stato interno (ad esempio, conteggio delle richieste per client)*  
 - *Comunicazione RPC su TCP*  
+
+---
+
+## **Servizio Stateful con Stato Condiviso**
+
+Il servizio S1 è replicato (service1 e service2) e mantiene uno stato condiviso tramite un volume Docker:
+
+shared-state:/app/state
+
+Il metodo DoWork:
+
+- *legge il contatore globale da /app/state/counter.txt*
+- *lo incrementa*
+- *lo riscrive*
+- *restutuisce una risposta coerente tra repliche*
+
+Questo garantisce consistenza dello stato tra repliche
+
+---
+
+## **Servizio Stateless**
+
+Il metodo Echo è completamente stateless:
+
+- *nessun accesso a file o stato condiviso*
+- *risposta immediata e deterministica*
+
+Serve per mostrare la differenza tra servizi statefull e stateless
 
 ---
 
@@ -121,6 +190,7 @@ L’intero sistema è orchestrato tramite Docker Compose.
 
 Lo script esegue automaticamente:
 
+- *Pulizia dei container*
 - *Ricostruzione delle immagini Docker*
 - *Avvio di registry, servizi e client*
 - *Visualizzazione dei log dei client*
