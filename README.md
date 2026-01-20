@@ -97,7 +97,7 @@ interamente lato client.
 Ogni servizio espone un metodo RPC che elabora le richieste  
 dei client e restituisce una risposta.
 
-*Sottotitolo – Caratteristiche principali:*
+*Caratteristiche principali:*
 
 - *Registrazione automatica all’avvio*  
 - *Deregistrazione automatica alla terminazione*  
@@ -155,12 +155,12 @@ In caso di errore RPC:
 
 Il progetto implementa sia algoritmi stateless sia stateful.
 
-*Sottotitolo – Stateless:*
+*Stateless:*
 
 - *Random: selezione casuale del servizio*  
 - *Round Robin: selezione ciclica dei servizi*  
 
-*Sottotitolo – Stateful:*
+*Stateful:*
 
 - *Weighted: selezione basata su un peso assegnato dal registry,  
   utile per distribuire il carico in base alle risorse disponibili*  
@@ -195,7 +195,7 @@ Questo consente di osservare:
 
 L’intero sistema è orchestrato tramite Docker Compose.
 
-*Sottotitolo – Avvio del sistema:*
+*Avvio del sistema:*
 
 Lo script esegue automaticamente:
 
@@ -206,3 +206,58 @@ Lo script esegue automaticamente:
 
 ```bash
 ./run.sh
+```
+---
+
+## **Estendibilità del sistema**
+
+Il sistema è progettato per essere facilmente estendibile. Per aggiungere nuovi client o repliche di servizi basta modificare il file *docker-compose.yml*.
+
+*Aggiunta di nuovi client:*
+
+```Yaml
+client4:
+  build: ./client
+  depends_on:
+    - registry
+  command: ["./client", "roundrobin"]
+```
+Si può scegliere l'algoritmo tra random, roundrobin e weighted.
+
+*Aggiungere un nuovo servizio:*
+
+Il sistema supporta più servizi logici. Ogni servizio è identificato da un nome (SERVICE_NAME) e può avere una o più repliche.
+
+```Yaml
+serviceS2_1:
+  build: ./service
+  environment:
+    - SERVICE_NAME=S2
+    - SERVICE_HOST=serviceS2_1
+  command: ["./service", "8101", "1"]
+  volumes:
+    - shared-state:/app/state
+  depends_on:
+    - registry
+```
+
+*Aggiunta di nuove repliche del servizio:*
+
+Per aggiungere una nuova replica del servizio:
+
+```Yaml
+service3:
+  build: ./service
+  environment:
+    - SERVICE_NAME=S1
+    - SERVICE_HOST=service3
+  command: ["./service", "8003", "2"]
+  volumes:
+    - shared-state:/app/state
+```
+
+---
+
+
+
+
